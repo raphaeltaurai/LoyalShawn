@@ -98,7 +98,7 @@ export default function LandingPage() {
                 Join hundreds of businesses transforming their customer engagement with LoyaltyAI.
               </p>
               <div className="mt-8">
-                <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "bg-blue-500 hover:bg-blue-600 text-white" })}>
+                <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "bg-blue-500 hover:bg-blue-600 text-black" })}>
                   Sign Up for Free <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </div>
