@@ -1,4 +1,4 @@
-# Empty conversation
+# LoyaltAi
 
 *Automatically synced with your [v0.app](https://v0.app) deployments*
 
@@ -14,17 +14,5 @@ Any changes you make to your deployed app will be automatically pushed to this r
 
 Your project is live at:
 
-**[https://vercel.com/nushework-2128s-projects/v0-empty-conversation](https://vercel.com/nushework-2128s-projects/v0-empty-conversation)**
+**https://loyaltai.vercel.app/**
 
-## Build your app
-
-Continue building your app on:
-
-**[https://v0.app/chat/projects/cRbYZlMvE2U](https://v0.app/chat/projects/cRbYZlMvE2U)**
-
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
