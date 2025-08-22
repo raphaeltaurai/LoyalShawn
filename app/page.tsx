@@ -30,7 +30,7 @@ export default function LandingPage() {
               </p>
               <div className="mt-8 flex justify-center gap-4 animate-in fade-in-0 slide-in-from-top-16 duration-1000">
                 <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "bg-blue-500 hover:bg-blue-600 text-white" })}>
-                  Get Started <ArrowRight className="ml-2 h-5 w-5" />
+                  Get Started <ArrowRight className="text-4xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent animate-in fade-in-0 slide-in-from-top-8 duration-1000" />
                 </Link>
                 <Link href="#features" className={buttonVariants({ size: "lg", variant: "outline", className: "text-white border-white/50 hover:bg-white/10" })}>
                   Learn More
