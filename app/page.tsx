@@ -29,7 +29,7 @@ export default function LandingPage() {
                 LoyaltyAI helps you build unbreakable customer relationships with intelligent, personalized, and seamless loyalty programs.
               </p>
               <div className="mt-8 flex justify-center gap-4 animate-in fade-in-0 slide-in-from-top-16 duration-1000">
-                <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "bg-blue-500 hover:bg-blue-600 text-white" })}>
+                <Link href="/dashboard" className={buttonVariants({ size: "lg", className: "bg-blue-500 hover:bg-blue-600 text-black" })}>
                   Get Started <ArrowRight className="text-4xl md:text-6xl font-bold tracking-tighter bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent animate-in fade-in-0 slide-in-from-top-8 duration-1000" />
                 </Link>
                 <Link href="#features" className={buttonVariants({ size: "lg", variant: "outline", className: "text-white border-white/50 hover:bg-white/10" })}>
