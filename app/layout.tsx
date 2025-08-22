@@ -4,6 +4,8 @@ import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/components/auth-provider"
+import { Header } from "@/components/header"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -38,8 +40,11 @@ html {
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <ErrorBoundary>{children}</ErrorBoundary>
-          <Toaster />
+          <AuthProvider>
+            <Header />
+            <ErrorBoundary>{children}</ErrorBoundary>
+            <Toaster />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
@@ -47,5 +52,5 @@ html {
 }
 
 function ErrorBoundary({ children }: { children: React.ReactNode }) {
-  return <div className="min-h-screen">{children}</div>
+  return <div className="min-h-screen pt-16">{children}</div>
 }
