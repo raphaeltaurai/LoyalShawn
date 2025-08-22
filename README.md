@@ -11,7 +11,7 @@
 
 ## Deployment
 
-Your project is live at:
+Project is live at:
 
 **https://loyaltai.vercel.app/**
 
