@@ -37,7 +37,7 @@ html {
         `}</style>
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
           <ErrorBoundary>{children}</ErrorBoundary>
           <Toaster />
         </ThemeProvider>

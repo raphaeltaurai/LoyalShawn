@@ -42,9 +42,9 @@ export function AdminDashboard() {
 
   if (!hasPermission("read:analytics")) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600">Access Denied</h2>
+          <h2 className="text-2xl font-bold text-destructive">Access Denied</h2>
           <p className="text-muted-foreground">You don't have permission to access this dashboard.</p>
         </div>
       </div>
@@ -52,20 +52,31 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 shadow-sm border-b">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
+      <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-blue-600">LoyaltyAI</h1>
-              <Badge variant="secondary">Admin Portal</Badge>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                LoyaltyAI
+              </h1>
+              <Badge
+                variant="secondary"
+                className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300"
+              >
+                Admin Portal
+              </Badge>
             </div>
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground">Welcome, {user?.name}</span>
-              <Button variant="outline" size="sm" onClick={logout}>
+              <span className="text-sm text-muted-foreground hidden sm:block">Welcome, {user?.name}</span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={logout}
+                className="hover:bg-destructive/10 hover:text-destructive hover:border-destructive/50 bg-transparent"
+              >
                 <LogOut className="h-4 w-4 mr-2" />
-                Logout
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -76,102 +87,100 @@ export function AdminDashboard() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <SecurityBanner />
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
+          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground">Active Customers</CardTitle>
+              <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalCustomers.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-foreground">{totalCustomers.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">{highValueCustomers} high-value customers</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Points Issued</CardTitle>
-              <Gift className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground">Points Issued</CardTitle>
+              <Gift className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{totalPointsIssued.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-foreground">{totalPointsIssued.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">
                 Avg {Math.floor(totalPointsIssued / totalCustomers)} per customer
               </p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Engagement Rate</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground">Engagement Rate</CardTitle>
+              <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{engagementRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-foreground">{engagementRate.toFixed(1)}%</div>
               <p className="text-xs text-muted-foreground">Active in last 30 days</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-gradient-to-br from-card to-card/50 border-border/50 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue Impact</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-foreground">Revenue Impact</CardTitle>
+              <DollarSign className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">${totalRevenue.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div>
               <p className="text-xs text-muted-foreground">${avgTransactionValue.toFixed(2)} avg transaction</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions & AI Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <Card className="bg-card border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Manage your loyalty program</CardDescription>
+              <CardTitle className="text-foreground">Quick Actions</CardTitle>
+              <CardDescription className="text-muted-foreground">Manage your loyalty program</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full justify-start">
+              <Button className="w-full justify-start bg-primary hover:bg-primary/90">
                 <Settings className="h-4 w-4 mr-2" />
                 Configure Rewards
               </Button>
-              <Button variant="outline" className="w-full justify-start bg-transparent">
+              <Button variant="outline" className="w-full justify-start border-border hover:bg-accent bg-transparent">
                 <Users className="h-4 w-4 mr-2" />
                 Manage Customers
               </Button>
-              <Button variant="outline" className="w-full justify-start bg-transparent">
+              <Button variant="outline" className="w-full justify-start border-border hover:bg-accent bg-transparent">
                 <TrendingUp className="h-4 w-4 mr-2" />
                 View Analytics
               </Button>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-card border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle>AI Insights</CardTitle>
-              <CardDescription>Recent behavioral analysis</CardDescription>
+              <CardTitle className="text-foreground">AI Insights</CardTitle>
+              <CardDescription className="text-muted-foreground">Recent behavioral analysis</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <p className="text-sm font-medium">High-Value Customer Alert</p>
+                <div className="p-3 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
+                  <p className="text-sm font-medium text-foreground">High-Value Customer Alert</p>
                   <p className="text-xs text-muted-foreground">
                     {highValueCustomers} customers showing increased spending patterns
                   </p>
                 </div>
-                <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                  <p className="text-sm font-medium">Engagement Opportunity</p>
+                <div className="p-3 bg-green-50/50 dark:bg-green-900/20 rounded-lg border border-green-200/50 dark:border-green-800/50">
+                  <p className="text-sm font-medium text-foreground">Engagement Opportunity</p>
                   <p className="text-xs text-muted-foreground">
                     Weekend promotions show {Math.floor(Math.random() * 30 + 15)}% higher conversion
                   </p>
                 </div>
                 {churnRiskCustomers > 0 && (
-                  <div className="p-3 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                  <div className="p-3 bg-orange-50/50 dark:bg-orange-900/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50">
                     <div className="flex items-center">
-                      <AlertTriangle className="h-4 w-4 text-orange-600 mr-2" />
-                      <p className="text-sm font-medium">Churn Risk</p>
+                      <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
+                      <p className="text-sm font-medium text-foreground">Churn Risk</p>
                     </div>
                     <p className="text-xs text-muted-foreground">{churnRiskCustomers} customers at risk of churning</p>
                   </div>
@@ -181,35 +190,37 @@ export function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Customer Insights Table */}
-        <Card className="mt-6">
+        <Card className="mt-6 bg-card border-border/50 shadow-lg">
           <CardHeader>
-            <CardTitle>Customer Insights</CardTitle>
-            <CardDescription>Top customers and their analytics</CardDescription>
+            <CardTitle className="text-foreground">Customer Insights</CardTitle>
+            <CardDescription className="text-muted-foreground">Top customers and their analytics</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {customers.slice(0, 5).map((customer) => {
                 const analytics = getCustomerAnalytics(customer.id)
                 return (
-                  <div key={customer.id} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div
+                    key={customer.id}
+                    className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors"
+                  >
                     <div className="flex items-center space-x-4">
                       <div>
-                        <p className="font-medium">{customer.name}</p>
+                        <p className="font-medium text-foreground">{customer.name}</p>
                         <p className="text-sm text-muted-foreground">{customer.email}</p>
                       </div>
-                      <Badge variant="outline" className="capitalize">
+                      <Badge variant="outline" className="capitalize border-border text-foreground">
                         {customer.tier}
                       </Badge>
                     </div>
                     <div className="text-right space-y-1">
                       <div className="flex items-center space-x-4">
                         <div>
-                          <p className="text-sm font-medium">{customer.points.toLocaleString()} pts</p>
+                          <p className="text-sm font-medium text-foreground">{customer.points.toLocaleString()} pts</p>
                           <p className="text-xs text-muted-foreground">${customer.totalSpent.toFixed(0)} spent</p>
                         </div>
                         <div>
-                          <p className="text-sm font-medium">{customer.visitCount} visits</p>
+                          <p className="text-sm font-medium text-foreground">{customer.visitCount} visits</p>
                           <p className="text-xs text-muted-foreground">
                             LTV: ${analytics?.lifetimeValue.toFixed(0) || "0"}
                           </p>
