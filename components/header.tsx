@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useAuth } from "./auth-provider"
 import { Button } from "./ui/button"
 import { useRouter } from "next/navigation"
+import { ThemeToggle } from "./theme-toggle"
 
 export function Header() {
   const { user, logout } = useAuth()
@@ -35,6 +36,7 @@ export function Header() {
             >
               Features
             </Link>
+            <ThemeToggle />
             {user ? (
               <>
                 <Button

@@ -6,6 +6,7 @@ import { SecurityManager, validationSchemas } from "@/lib/security"
 import { mockLoyaltyProgram, mockCustomers, mockTransactions, mockRewards } from "@/lib/mock-data"
 import type { Customer, Transaction, Reward } from "@/lib/mock-data"
 import { useSecurity } from "./use-security"
+import type { Coordinates, GeoFence } from "@/lib/location"
 
 export function useLoyaltyEngine() {
   const [loyaltyEngine] = useState(() => new LoyaltyEngine(mockLoyaltyProgram))
@@ -13,6 +14,22 @@ export function useLoyaltyEngine() {
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions)
   const [rewards, setRewards] = useState<Reward[]>(mockRewards)
   const { securityContext, validateTenantAccess, auditLog } = useSecurity()
+  const [geofences, setGeofences] = useState<Record<string, GeoFence[]>>({})
+
+  const configureGeofences = (tenantId: string, fences: GeoFence[]) => {
+    setGeofences((prev) => ({ ...prev, [tenantId]: fences }))
+    loyaltyEngine.registerGeofences(
+      tenantId,
+      fences.map((f) => ({ id: f.id, name: f.name, latitude: f.latitude, longitude: f.longitude, radiusMeters: f.radiusMeters }))
+    )
+  }
+
+  const getProgram = () => loyaltyEngine.getProgram()
+  const updateProgramRules = (rulesPartial: Partial<typeof mockLoyaltyProgram.rules>) => {
+    if (!securityContext || securityContext.role !== "admin") return
+    loyaltyEngine.updateRules(rulesPartial)
+    auditLog("PROGRAM_RULES_UPDATED", rulesPartial)
+  }
 
   const getFilteredCustomers = (): Customer[] => {
     if (!securityContext) return []
@@ -78,11 +95,33 @@ export function useLoyaltyEngine() {
     return result
   }
 
+  // Location-based: check-in to earn bonus points
+  const checkInAtLocation = (customerId: string, coords: Coordinates) => {
+    if (!securityContext) return { success: false, message: "Not authorized" }
+
+    if (!SecurityManager.canCheckIn(securityContext.userId)) {
+      return { success: false, message: "Too many check-ins. Try again later." }
+    }
+
+    const customer = customers.find((c) => c.id === customerId)
+    if (!customer || !validateTenantAccess(customer.tenantId)) {
+      auditLog("UNAUTHORIZED_CHECKIN_ATTEMPT", { customerId })
+      return { success: false, message: "Unauthorized" }
+    }
+
+    const result = loyaltyEngine.awardCheckIn(customer, coords)
+    if (result.success && result.updatedCustomer) {
+      setCustomers((prev) => prev.map((c) => (c.id === customerId ? result.updatedCustomer! : c)))
+      auditLog("CHECKIN_AWARDED", { customerId, bonus: mockLoyaltyProgram.rules.checkInBonusPoints })
+    }
+    return result
+  }
+
   // Redeem a reward with security validation
   const redeemReward = (customerId: string, rewardId: string) => {
     if (!securityContext) return null
 
-    if (!SecurityManager.checkRateLimit(`${securityContext.userId}_redemption`, 5, 60000)) {
+    if (!SecurityManager.canRedeem(securityContext.userId)) {
       throw new Error("Too many redemption attempts. Please try again later.")
     }
 
@@ -182,10 +221,15 @@ export function useLoyaltyEngine() {
     customers: getFilteredCustomers(),
     transactions: getFilteredTransactions(),
     rewards: getFilteredRewards(),
+    geofences,
+    configureGeofences,
+    getProgram,
+    updateProgramRules,
     processTransaction,
     redeemReward,
     getCustomerAnalytics,
     getTierProgress,
     getPersonalizedOffers,
+    checkInAtLocation,
   }
 }

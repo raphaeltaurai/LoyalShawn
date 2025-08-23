@@ -2,6 +2,7 @@
 
 import type React from "react"
 import { useState, useEffect, createContext, useContext } from "react"
+import { CryptoUtils } from "@/lib/utils"
 import { GoogleAuthService } from "../lib/google-auth"
 import { useToast } from "@/hooks/use-toast"
 import { LoadingSpinner } from "./ui/loading-spinner"
@@ -71,8 +72,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const storedUser = localStorage.getItem("loyalty-user")
-        if (storedUser) {
+        const storedUserRaw = localStorage.getItem("loyalty-user")
+        if (storedUserRaw) {
+          const storedUser = CryptoUtils.decrypt(storedUserRaw)
           const parsedUser = JSON.parse(storedUser)
           setUser(parsedUser)
         }
@@ -96,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const foundUser = mockUsers.find((u) => u.email === email)
     if (foundUser && password === "demo123") {
       setUser(foundUser)
-      localStorage.setItem("loyalty-user", JSON.stringify(foundUser))
+      localStorage.setItem("loyalty-user", CryptoUtils.encrypt(JSON.stringify(foundUser)))
       setIsLoading(false)
       return true
     }
@@ -123,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
 
         setUser(newUser)
-        localStorage.setItem("loyalty-user", JSON.stringify(newUser))
+        localStorage.setItem("loyalty-user", CryptoUtils.encrypt(JSON.stringify(newUser)))
         setIsLoading(false)
         return true
       }

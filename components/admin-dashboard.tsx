@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "./auth-wrapper"
+import { useAuth } from "./auth-provider"
 import { useLoyaltyEngine } from "@/hooks/use-loyalty-engine"
 import { useSecurity } from "@/hooks/use-security"
 import { SecurityBanner } from "./security-banner"
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Badge } from "./ui/badge"
 import { LogOut, Users, Gift, TrendingUp, Settings, AlertTriangle, DollarSign } from "lucide-react"
 import React from "react"
+import { AdminRulesConfig } from "./admin-rules-config"
 
 export function AdminDashboard() {
   const { user, logout } = useAuth()
@@ -188,6 +189,10 @@ export function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+
+        <div className="mt-6">
+          <AdminRulesConfig />
         </div>
 
         <Card className="mt-6 bg-card border-border/50 shadow-lg">

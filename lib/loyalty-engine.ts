@@ -23,6 +23,7 @@ export interface TierProgressInfo {
 
 export class LoyaltyEngine {
   private loyaltyProgram: LoyaltyProgram
+  private geofencesByTenant: Record<string, Array<{ id: string; name: string; latitude: number; longitude: number; radiusMeters: number }>> = {}
 
   constructor(loyaltyProgram: LoyaltyProgram) {
     this.loyaltyProgram = loyaltyProgram
@@ -99,6 +100,65 @@ export class LoyaltyEngine {
       pointsEarned: pointsCalc,
       newTransaction,
     }
+  }
+
+  // Register geofences for a tenant (e.g., store locations)
+  registerGeofences(tenantId: string, fences: Array<{ id: string; name: string; latitude: number; longitude: number; radiusMeters: number }>) {
+    this.geofencesByTenant[tenantId] = fences
+  }
+
+  // Read current program config
+  getProgram(): LoyaltyProgram {
+    return this.loyaltyProgram
+  }
+
+  // Update program rules (admin)
+  updateRules(rulesPartial: Partial<LoyaltyProgram["rules"]>) {
+    this.loyaltyProgram = {
+      ...this.loyaltyProgram,
+      rules: {
+        ...this.loyaltyProgram.rules,
+        ...rulesPartial,
+      },
+    }
+  }
+
+  // Award check-in bonus if within a registered geofence
+  awardCheckIn(customer: Customer, coords: { latitude: number; longitude: number }): { success: boolean; message: string; updatedCustomer?: Customer } {
+    const fences = this.geofencesByTenant[customer.tenantId] || []
+    if (fences.length === 0) {
+      return { success: false, message: "No locations configured" }
+    }
+
+    const radius = this.loyaltyProgram.rules.checkInRadiusMeters ?? 150
+    const toRad = (deg: number) => (deg * Math.PI) / 180
+    const R = 6371e3
+    const isInside = fences.some((f) => {
+      const dLat = toRad(f.latitude - coords.latitude)
+      const dLon = toRad(f.longitude - coords.longitude)
+      const lat1 = toRad(coords.latitude)
+      const lat2 = toRad(f.latitude)
+      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+      const distance = R * c
+      return distance <= Math.max(50, Math.min(1000, radius))
+    })
+
+    if (!isInside) {
+      return { success: false, message: "Not at a participating location" }
+    }
+
+    const bonus = this.loyaltyProgram.rules.checkInBonusPoints ?? 25
+    const updatedCustomer: Customer = {
+      ...customer,
+      points: customer.points + bonus,
+      visitCount: customer.visitCount + 1,
+      lastVisit: new Date(),
+    }
+    const newTier = this.calculateTier(updatedCustomer.points)
+    if (newTier !== customer.tier) updatedCustomer.tier = newTier
+
+    return { success: true, message: `Check-in successful! +${bonus} pts awarded`, updatedCustomer }
   }
 
   // Redeem a reward

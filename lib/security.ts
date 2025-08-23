@@ -76,6 +76,17 @@ export class SecurityManager {
     return true
   }
 
+  // Specialized velocity checks
+  static canCheckIn(userId: string): boolean {
+    // Allow at most 2 check-ins per 10 minutes
+    return this.checkRateLimit(`checkin_${userId}`, 2, 10 * 60 * 1000)
+  }
+
+  static canRedeem(userId: string): boolean {
+    // Allow at most 3 redemptions per hour
+    return this.checkRateLimit(`redeem_${userId}`, 3, 60 * 60 * 1000)
+  }
+
   // Input validation
   static validateInput(input: any, schema: Record<string, any>): { valid: boolean; errors: string[] } {
     const errors: string[] = []
@@ -123,6 +134,17 @@ export class SecurityManager {
 
     // In a real app, this would go to a secure audit log
     console.log("[AUDIT]", logEntry)
+    try {
+      // Fire-and-forget server logging
+      fetch("/api/audit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(logEntry),
+        keepalive: true,
+      }).catch(() => {})
+    } catch {
+      // ignore
+    }
   }
 }
 

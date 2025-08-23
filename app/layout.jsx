@@ -1,5 +1,3 @@
-import type React from "react"
-import type { Metadata } from "next"
 import { GeistSans } from "geist/font/sans"
 import { GeistMono } from "geist/font/mono"
 import { Toaster } from "@/components/ui/toaster"
@@ -8,7 +6,7 @@ import { AuthProvider } from "@/components/auth-provider"
 import { Header } from "@/components/header"
 import "./globals.css"
 
-export const metadata: Metadata = {
+export const metadata = {
   title: "LoyaltyAI - AI-Powered Customer Loyalty Platform",
   description:
     "Transform customer engagement with AI-driven loyalty programs, personalized rewards, and advanced analytics.",
@@ -22,11 +20,7 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -51,6 +45,8 @@ html {
   )
 }
 
-function ErrorBoundary({ children }: { children: React.ReactNode }) {
+function ErrorBoundary({ children }) {
   return <div className="min-h-screen pt-16">{children}</div>
 }
+
+

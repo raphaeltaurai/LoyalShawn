@@ -1,28 +1,50 @@
 "use client"
 
 import React from "react"
-import { useAuth } from "./auth-wrapper"
+import { useAuth } from "./auth-provider"
 import { useLoyaltyEngine } from "@/hooks/use-loyalty-engine"
 import { useSecurity } from "@/hooks/use-security"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Progress } from "./ui/progress"
-import { LogOut, Gift, Star, Clock, TrendingUp } from "lucide-react"
+import { LogOut, Gift, Star, Clock, TrendingUp, MapPin } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { SecurityBanner } from "./security-banner"
+import { useLocation } from "@/hooks/use-location"
 
 export function CustomerDashboard() {
   const { user, logout } = useAuth()
-  const { customers, rewards, redeemReward, getTierProgress, getPersonalizedOffers } = useLoyaltyEngine()
+  const { customers, rewards, redeemReward, getTierProgress, getPersonalizedOffers, checkInAtLocation, configureGeofences } = useLoyaltyEngine()
   const { auditLog } = useSecurity()
   const { toast } = useToast()
   const [isRedeeming, setIsRedeeming] = useState<string | null>(null)
 
   React.useEffect(() => {
     auditLog("CUSTOMER_DASHBOARD_ACCESSED")
+    // Configure demo geofences for tenant
+    configureGeofences("coffee-shop-1", [
+      { id: "store-main", name: "Main Street", latitude: 6.5244, longitude: 3.3792, radiusMeters: 200, tenantId: "coffee-shop-1" },
+    ])
   }, [auditLog])
+  const { coords, loading: locLoading, error: locError, refresh } = useLocation([
+    { id: "store-main", name: "Main Street", latitude: 6.5244, longitude: 3.3792, radiusMeters: 200, tenantId: "coffee-shop-1" },
+  ])
+
+  const handleCheckIn = async () => {
+    if (!customer) return
+    if (!coords) {
+      toast({ title: "Location not available", description: "Please enable location and try again.", variant: "destructive" })
+      return
+    }
+    const result = checkInAtLocation(customer.id, coords)
+    if (result.success) {
+      toast({ title: "Checked in!", description: result.message })
+    } else {
+      toast({ title: "Check-in failed", description: result.message, variant: "destructive" })
+    }
+  }
 
   let customer = customers.find((c) => c.id === user?.id)
 
@@ -184,6 +206,18 @@ export function CustomerDashboard() {
             <CardDescription className="text-muted-foreground">Redeem your points for these rewards</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="flex items-center justify-between mb-4">
+              <Button variant="outline" size="sm" onClick={refresh} disabled={locLoading}>
+                {locLoading ? "Getting location..." : "Refresh Location"}
+              </Button>
+              <Button size="sm" onClick={handleCheckIn} className="flex items-center">
+                <MapPin className="h-4 w-4 mr-2" /> Check-in for Bonus
+              </Button>
+            </div>
+            {locError && <p className="text-xs text-destructive mb-2">{locError}</p>}
+            {coords && (
+              <p className="text-xs text-muted-foreground mb-2">Lat: {coords.latitude.toFixed(4)}, Lng: {coords.longitude.toFixed(4)}</p>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rewards.map((reward) => {
                 const canAfford = customer.points >= reward.pointsCost

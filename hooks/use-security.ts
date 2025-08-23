@@ -1,6 +1,6 @@
 "use client"
 
-import { useAuth } from "@/components/auth-wrapper"
+import { useAuth } from "@/components/auth-provider"
 import { SecurityManager, type SecurityContext } from "@/lib/security"
 import { useMemo } from "react"
 

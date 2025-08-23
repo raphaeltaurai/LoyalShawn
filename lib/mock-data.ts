@@ -80,6 +80,8 @@ export interface LoyaltyProgram {
     pointExpiry: number // days
     referralBonus: number
     birthdayBonus: number
+    checkInBonusPoints?: number
+    checkInRadiusMeters?: number
   }
 }
 
@@ -192,5 +194,7 @@ export const mockLoyaltyProgram: LoyaltyProgram = {
     pointExpiry: 365,
     referralBonus: 100,
     birthdayBonus: 250,
+    checkInBonusPoints: 50,
+    checkInRadiusMeters: 150,
   },
 }
