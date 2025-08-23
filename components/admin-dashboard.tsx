@@ -147,7 +147,11 @@ export function AdminDashboard() {
                 <Settings className="h-4 w-4 mr-2" />
                 Configure Rewards
               </Button>
-              <Button variant="outline" className="w-full justify-start border-border hover:bg-accent bg-transparent">
+              <Button
+                variant="outline"
+                className="w-full justify-start border-border hover:bg-accent bg-transparent"
+                onClick={() => (window.location.href = "/admin/customers")}
+              >
                 <Users className="h-4 w-4 mr-2" />
                 Manage Customers
               </Button>

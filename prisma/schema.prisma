@@ -88,3 +88,9 @@ model Transaction {
   timestamp      DateTime @default(now())
   paymentMethod  String
 }
+
+model Testing {
+  id        String   @id @default(cuid())
+  name      String?
+  createdAt DateTime @default(now())
+}

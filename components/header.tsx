@@ -48,9 +48,14 @@ export function Header() {
                 <Button onClick={handleLogout}>Logout</Button>
               </>
             ) : (
-              <Button asChild>
-                <Link href="/login">Login</Link>
-              </Button>
+              <>
+                <Button asChild variant="outline">
+                  <Link href="/signup">Sign up</Link>
+                </Button>
+                <Button asChild>
+                  <Link href="/login">Login</Link>
+                </Button>
+              </>
             )}
           </nav>
         </div>

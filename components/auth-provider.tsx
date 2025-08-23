@@ -98,9 +98,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
       const data = await res.json()
-      if (data.ok && data.user) {
+      if (data.ok && data.user && data.token) {
         setUser(data.user)
         localStorage.setItem("loyalty-user", CryptoUtils.encrypt(JSON.stringify(data.user)))
+        localStorage.setItem("loyalty-token", data.token)
         setIsLoading(false)
         return true
       }
@@ -148,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(null)
       localStorage.removeItem("loyalty-user")
+      localStorage.removeItem("loyalty-token")
       toast({
         title: "Signed out",
         description: "You have been successfully signed out.",
