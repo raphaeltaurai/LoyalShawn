@@ -24,6 +24,18 @@ export function useLoyaltyEngine() {
     )
   }
 
+  const fetchGeofences = async (tenantId: string) => {
+    try {
+      const res = await fetch(`/api/geofences?tenantId=${tenantId}`)
+      const data = await res.json()
+      if (data.ok && data.geofences) {
+        configureGeofences(tenantId, data.geofences)
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
   const getProgram = () => loyaltyEngine.getProgram()
   const updateProgramRules = (rulesPartial: Partial<typeof mockLoyaltyProgram.rules>) => {
     if (!securityContext || securityContext.role !== "admin") return
@@ -223,6 +235,7 @@ export function useLoyaltyEngine() {
     rewards: getFilteredRewards(),
     geofences,
     configureGeofences,
+    fetchGeofences,
     getProgram,
     updateProgramRules,
     processTransaction,

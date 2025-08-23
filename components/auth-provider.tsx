@@ -91,18 +91,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     setIsLoading(true)
-
-    // Mock authentication
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    const foundUser = mockUsers.find((u) => u.email === email)
-    if (foundUser && password === "demo123") {
-      setUser(foundUser)
-      localStorage.setItem("loyalty-user", CryptoUtils.encrypt(JSON.stringify(foundUser)))
-      setIsLoading(false)
-      return true
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      })
+      const data = await res.json()
+      if (data.ok && data.user) {
+        setUser(data.user)
+        localStorage.setItem("loyalty-user", CryptoUtils.encrypt(JSON.stringify(data.user)))
+        setIsLoading(false)
+        return true
+      }
+    } catch (e) {
+      console.error("Login API failed", e)
     }
-
     setIsLoading(false)
     return false
   }

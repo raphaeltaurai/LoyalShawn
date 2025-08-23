@@ -16,21 +16,17 @@ import { useLocation } from "@/hooks/use-location"
 
 export function CustomerDashboard() {
   const { user, logout } = useAuth()
-  const { customers, rewards, redeemReward, getTierProgress, getPersonalizedOffers, checkInAtLocation, configureGeofences } = useLoyaltyEngine()
+  const { customers, rewards, redeemReward, getTierProgress, getPersonalizedOffers, checkInAtLocation, configureGeofences, fetchGeofences } = useLoyaltyEngine()
   const { auditLog } = useSecurity()
   const { toast } = useToast()
   const [isRedeeming, setIsRedeeming] = useState<string | null>(null)
 
   React.useEffect(() => {
     auditLog("CUSTOMER_DASHBOARD_ACCESSED")
-    // Configure demo geofences for tenant
-    configureGeofences("coffee-shop-1", [
-      { id: "store-main", name: "Main Street", latitude: 6.5244, longitude: 3.3792, radiusMeters: 200, tenantId: "coffee-shop-1" },
-    ])
+    // Load geofences from backend
+    fetchGeofences("coffee-shop-1")
   }, [auditLog])
-  const { coords, loading: locLoading, error: locError, refresh } = useLocation([
-    { id: "store-main", name: "Main Street", latitude: 6.5244, longitude: 3.3792, radiusMeters: 200, tenantId: "coffee-shop-1" },
-  ])
+  const { coords, loading: locLoading, error: locError, refresh } = useLocation([])
 
   const handleCheckIn = async () => {
     if (!customer) return
