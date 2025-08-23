@@ -1,4 +1,4 @@
-import kmeans from "ml-kmeans"
+import { kmeans } from "ml-kmeans"
 import logistic from "ml-logistic-regression"
 import * as ss from "simple-statistics"
 

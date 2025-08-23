@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../lib/generated/prisma"
@@ -15,71 +9,70 @@ datasource db {
 }
 
 model Tenant {
-  id        String      @id @default(cuid())
-  slug      String      @unique
+  id        String     @id @default(cuid())
+  slug      String     @unique
   name      String
-  users     User[]
+  createdAt DateTime   @default(now())
   geofences Geofence[]
   programs  Program[]
   rewards   Reward[]
-  createdAt DateTime    @default(now())
+  users     User[]
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String        @id @default(cuid())
+  email        String        @unique
   name         String
   role         String
   passwordHash String?
   picture      String?
   tenantId     String
-  tenant       Tenant    @relation(fields: [tenantId], references: [id])
+  createdAt    DateTime      @default(now())
   transactions Transaction[]
-  createdAt    DateTime  @default(now())
+  tenant       Tenant        @relation(fields: [tenantId], references: [id])
 }
 
 model Geofence {
   id           String   @id @default(cuid())
   tenantId     String
-  tenant       Tenant   @relation(fields: [tenantId], references: [id])
   name         String
   latitude     Float
   longitude    Float
   radiusMeters Int
   createdAt    DateTime @default(now())
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model Program {
   id                  String   @id @default(cuid())
   tenantId            String
-  tenant              Tenant   @relation(fields: [tenantId], references: [id])
   name                String
   pointsPerDollar     Int      @default(2)
   birthdayBonus       Int      @default(250)
   checkInBonusPoints  Int      @default(50)
   checkInRadiusMeters Int      @default(150)
   createdAt           DateTime @default(now())
+  tenant              Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model Reward {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   tenantId    String
-  tenant      Tenant   @relation(fields: [tenantId], references: [id])
   name        String
   description String
   pointsCost  Int
   category    String
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   usageLimit  Int?
-  usageCount  Int      @default(0)
+  usageCount  Int       @default(0)
   expiryDate  DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
+  tenant      Tenant    @relation(fields: [tenantId], references: [id])
 }
 
 model Transaction {
   id             String   @id @default(cuid())
   userId         String
-  user           User     @relation(fields: [userId], references: [id])
   tenantId       String
   amount         Float
   pointsEarned   Int
@@ -87,6 +80,7 @@ model Transaction {
   location       String
   timestamp      DateTime @default(now())
   paymentMethod  String
+  user           User     @relation(fields: [userId], references: [id])
 }
 
 model Testing {

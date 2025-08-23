@@ -47,6 +47,7 @@ export async function POST(request: Request) {
     const token = signAuthToken({ userId: user.id, email: user.email, role: "customer", tenantId: user.tenantId })
     return NextResponse.json({ ok: true, token, user: { id: user.id, email: user.email, name: user.name, role: user.role, tenantId: user.tenantId, picture: user.picture } })
   } catch (e) {
+    console.error("Signup error:", e)
     return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 })
   }
 }

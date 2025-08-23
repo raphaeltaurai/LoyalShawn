@@ -62,19 +62,19 @@ export default function SignupPage() {
 					<form onSubmit={onSubmit} className="space-y-4">
 						<div className="space-y-2">
 							<Label htmlFor="name">Name</Label>
-							<Input id="name" value={name} onChange={(e) => setName(e.target.value)} required disabled={busy} />
+							<Input id="name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Enter your full name" required disabled={busy} />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="email">Email</Label>
-							<Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required disabled={busy} />
+							<Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter your email address" required disabled={busy} />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="password">Password</Label>
-							<Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required disabled={busy} />
+							<Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password (min 6 characters)" required disabled={busy} />
 						</div>
 						<div className="space-y-2">
 							<Label htmlFor="confirmPassword">Confirm Password</Label>
-							<Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required disabled={busy} />
+							<Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm your password" required disabled={busy} />
 						</div>
 						{error && (
 							<Alert variant="destructive">
