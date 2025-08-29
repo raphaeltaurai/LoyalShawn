@@ -17,6 +17,7 @@ model Tenant {
   programs  Program[]
   rewards   Reward[]
   users     User[]
+  purchases Purchase[]
 }
 
 model User {
@@ -29,6 +30,7 @@ model User {
   tenantId     String
   createdAt    DateTime      @default(now())
   transactions Transaction[]
+  purchases    Purchase[]
   tenant       Tenant        @relation(fields: [tenantId], references: [id])
 }
 
@@ -81,6 +83,22 @@ model Transaction {
   timestamp      DateTime @default(now())
   paymentMethod  String
   user           User     @relation(fields: [userId], references: [id])
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  userId      String
+  tenantId    String
+  location    String
+  amount      Float
+  items       String   // JSON string of items
+  timestamp   DateTime @default(now())
+  status      String   @default("pending") // pending, approved, declined
+  approvedBy  String?  // admin user ID who approved/declined
+  approvedAt  DateTime?
+  pointsAwarded Int    @default(0)
+  user        User     @relation(fields: [userId], references: [id])
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
 }
 
 model Testing {

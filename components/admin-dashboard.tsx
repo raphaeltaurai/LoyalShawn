@@ -1,45 +1,58 @@
 "use client"
 
 import { useAuth } from "./auth-provider"
-import { useLoyaltyEngine } from "@/hooks/use-loyalty-engine"
 import { useSecurity } from "@/hooks/use-security"
 import { SecurityBanner } from "./security-banner"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
-import { LogOut, Users, Gift, TrendingUp, Settings, AlertTriangle, DollarSign } from "lucide-react"
-import React from "react"
+import { LogOut, Users, Gift, TrendingUp, Settings, AlertTriangle, DollarSign, CheckCircle, Shield } from "lucide-react"
+import React, { useState, useEffect } from "react"
 import { AdminRulesConfig } from "./admin-rules-config"
+import { useToast } from "@/hooks/use-toast"
+
+interface DashboardStats {
+  totalCustomers: number
+  totalPointsIssued: number
+  totalRevenue: number
+  engagementRate: number
+  highValueCustomers: number
+  churnRiskCustomers: number
+}
 
 export function AdminDashboard() {
   const { user, logout } = useAuth()
-  const { customers, transactions, rewards, getCustomerAnalytics } = useLoyaltyEngine()
   const { hasPermission, auditLog } = useSecurity()
+  const { toast } = useToast()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
 
   React.useEffect(() => {
     auditLog("ADMIN_DASHBOARD_ACCESSED")
+    fetchDashboardStats()
   }, [auditLog])
 
-  const totalCustomers = customers.length
-  const totalPointsIssued = transactions.reduce((sum, t) => sum + t.pointsEarned, 0)
-  const totalRevenue = transactions.reduce((sum, t) => sum + t.amount, 0)
-  const avgTransactionValue = totalRevenue / transactions.length || 0
+  const fetchDashboardStats = async () => {
+    if (!user) return
 
-  const highValueCustomers = customers.filter((c) => c.totalSpent > 1000).length
-  const churnRiskCustomers = customers.filter((c) => {
-    const analytics = getCustomerAnalytics(c.id)
-    return analytics?.churnRisk === "high"
-  }).length
-
-  const engagementRate =
-    (customers.filter((c) => {
-      const daysSinceLastVisit = Math.floor(
-        (new Date().getTime() - new Date(c.lastVisit).getTime()) / (1000 * 60 * 60 * 24),
-      )
-      return daysSinceLastVisit <= 30
-    }).length /
-      totalCustomers) *
-    100
+    try {
+      const token = localStorage.getItem("loyalty-token")
+      const res = await fetch(`/api/analytics?tenantId=${user.tenantId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      
+      if (data.ok) {
+        setStats(data.stats)
+      } else {
+        toast({ title: "Error", description: "Failed to fetch dashboard stats", variant: "destructive" })
+      }
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to load dashboard", variant: "destructive" })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (!hasPermission("read:analytics")) {
     return (
@@ -47,6 +60,17 @@ export function AdminDashboard() {
         <div className="text-center">
           <h2 className="text-2xl font-bold text-destructive">Access Denied</h2>
           <p className="text-muted-foreground">You don't have permission to access this dashboard.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     )
@@ -95,8 +119,12 @@ export function AdminDashboard() {
               <Users className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{totalCustomers.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">{highValueCustomers} high-value customers</p>
+              <div className="text-2xl font-bold text-foreground">
+                {stats?.totalCustomers.toLocaleString() || "0"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {stats?.highValueCustomers || 0} high-value customers
+              </p>
             </CardContent>
           </Card>
 
@@ -106,9 +134,11 @@ export function AdminDashboard() {
               <Gift className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{totalPointsIssued.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-foreground">
+                {stats?.totalPointsIssued.toLocaleString() || "0"}
+              </div>
               <p className="text-xs text-muted-foreground">
-                Avg {Math.floor(totalPointsIssued / totalCustomers)} per customer
+                Avg {stats ? Math.floor(stats.totalPointsIssued / stats.totalCustomers) : 0} per customer
               </p>
             </CardContent>
           </Card>
@@ -119,7 +149,9 @@ export function AdminDashboard() {
               <TrendingUp className="h-4 w-4 text-purple-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">{engagementRate.toFixed(1)}%</div>
+              <div className="text-2xl font-bold text-foreground">
+                {stats?.engagementRate.toFixed(1) || "0"}%
+              </div>
               <p className="text-xs text-muted-foreground">Active in last 30 days</p>
             </CardContent>
           </Card>
@@ -130,8 +162,12 @@ export function AdminDashboard() {
               <DollarSign className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-foreground">${totalRevenue.toLocaleString()}</div>
-              <p className="text-xs text-muted-foreground">${avgTransactionValue.toFixed(2)} avg transaction</p>
+              <div className="text-2xl font-bold text-foreground">
+                ${stats?.totalRevenue.toLocaleString() || "0"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                ${stats ? (stats.totalRevenue / stats.totalCustomers).toFixed(2) : "0"} avg per customer
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -145,13 +181,21 @@ export function AdminDashboard() {
             <CardContent className="space-y-4">
               <Button 
                 className="w-full justify-start bg-primary hover:bg-primary/90"
-                onClick={() => window.location.href = "/admin/rewards"}
+                onClick={() => window.location.href = "/admin/verification"}
               >
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Rewards
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Purchase Verification
               </Button>
               <Button
                 variant="outline"
+                className="w-full justify-start border-border hover:bg-accent bg-transparent"
+                onClick={() => window.location.href = "/admin/rewards"}
+              >
+                <Gift className="h-4 w-4 mr-2" />
+                Configure Rewards
+              </Button>
+              <Button 
+                variant="outline" 
                 className="w-full justify-start border-border hover:bg-accent bg-transparent"
                 onClick={() => window.location.href = "/admin/customers"}
               >
@@ -179,7 +223,7 @@ export function AdminDashboard() {
                 <div className="p-3 bg-blue-50/50 dark:bg-blue-900/20 rounded-lg border border-blue-200/50 dark:border-blue-800/50">
                   <p className="text-sm font-medium text-foreground">High-Value Customer Alert</p>
                   <p className="text-xs text-muted-foreground">
-                    {highValueCustomers} customers showing increased spending patterns
+                    {stats?.highValueCustomers || 0} customers showing increased spending patterns
                   </p>
                 </div>
                 <div className="p-3 bg-green-50/50 dark:bg-green-900/20 rounded-lg border border-green-200/50 dark:border-green-800/50">
@@ -188,13 +232,13 @@ export function AdminDashboard() {
                     Weekend promotions show {Math.floor(Math.random() * 30 + 15)}% higher conversion
                   </p>
                 </div>
-                {churnRiskCustomers > 0 && (
+                {stats && stats.churnRiskCustomers > 0 && (
                   <div className="p-3 bg-orange-50/50 dark:bg-orange-900/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50">
                     <div className="flex items-center">
                       <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400 mr-2" />
                       <p className="text-sm font-medium text-foreground">Churn Risk</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{churnRiskCustomers} customers at risk of churning</p>
+                    <p className="text-xs text-muted-foreground">{stats.churnRiskCustomers} customers at risk of churning</p>
                   </div>
                 )}
               </div>
@@ -209,12 +253,12 @@ export function AdminDashboard() {
         <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="bg-card border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle className="text-foreground">Manage Customers</CardTitle>
-              <CardDescription className="text-muted-foreground">View and manage customer accounts</CardDescription>
+              <CardTitle className="text-foreground">Purchase Verification</CardTitle>
+              <CardDescription className="text-muted-foreground">Review and approve customer purchases</CardDescription>
             </CardHeader>
             <CardContent>
-              <Button onClick={() => window.location.href = "/admin/customers"}>
-                View Customers
+              <Button onClick={() => window.location.href = "/admin/verification"}>
+                Review Purchases
               </Button>
             </CardContent>
           </Card>
@@ -231,63 +275,6 @@ export function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-
-        <Card className="mt-6 bg-card border-border/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="text-foreground">Customer Insights</CardTitle>
-            <CardDescription className="text-muted-foreground">Top customers and their analytics</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {customers.slice(0, 5).map((customer) => {
-                const analytics = getCustomerAnalytics(customer.id)
-                return (
-                  <div
-                    key={customer.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div>
-                        <p className="font-medium text-foreground">{customer.name}</p>
-                        <p className="text-sm text-muted-foreground">{customer.email}</p>
-                      </div>
-                      <Badge variant="outline" className="capitalize border-border text-foreground">
-                        {customer.tier}
-                      </Badge>
-                    </div>
-                    <div className="text-right space-y-1">
-                      <div className="flex items-center space-x-4">
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{customer.points.toLocaleString()} pts</p>
-                          <p className="text-xs text-muted-foreground">${customer.totalSpent.toFixed(0)} spent</p>
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{customer.visitCount} visits</p>
-                          <p className="text-xs text-muted-foreground">
-                            LTV: ${analytics?.lifetimeValue.toFixed(0) || "0"}
-                          </p>
-                        </div>
-                        {analytics && (
-                          <Badge
-                            variant={
-                              analytics.churnRisk === "high"
-                                ? "destructive"
-                                : analytics.churnRisk === "medium"
-                                  ? "secondary"
-                                  : "default"
-                            }
-                          >
-                            {analytics.churnRisk} risk
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
       </main>
     </div>
   )

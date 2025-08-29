@@ -2,13 +2,13 @@
 
 import React from "react"
 import { useAuth } from "./auth-provider"
-import { useLoyaltyEngine } from "@/hooks/use-loyalty-engine"
+import { useDatabase } from "@/hooks/use-database"
 import { useSecurity } from "@/hooks/use-security"
 import { Button } from "./ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { Badge } from "./ui/badge"
 import { Progress } from "./ui/progress"
-import { LogOut, Gift, Star, Clock, TrendingUp, MapPin } from "lucide-react"
+import { LogOut, Gift, Star, Clock, TrendingUp, MapPin, Loader2 } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { SecurityBanner } from "./security-banner"
@@ -17,25 +17,33 @@ import { PurchaseForm } from "./purchase-form"
 
 export function CustomerDashboard() {
   const { user, logout } = useAuth()
-  const { customers, rewards, redeemReward, getTierProgress, getPersonalizedOffers, checkInAtLocation, configureGeofences, fetchGeofences } = useLoyaltyEngine()
+  const { 
+    customerData, 
+    transactions, 
+    rewards, 
+    geofences, 
+    purchases,
+    loading, 
+    error,
+    checkInAtLocation, 
+    redeemReward 
+  } = useDatabase()
   const { auditLog } = useSecurity()
   const { toast } = useToast()
   const [isRedeeming, setIsRedeeming] = useState<string | null>(null)
+  const { coords, loading: locLoading, error: locError, refresh } = useLocation([])
 
   React.useEffect(() => {
     auditLog("CUSTOMER_DASHBOARD_ACCESSED")
-    // Load geofences from backend
-    fetchGeofences("coffee-shop-1")
   }, [auditLog])
-  const { coords, loading: locLoading, error: locError, refresh } = useLocation([])
 
   const handleCheckIn = async () => {
-    if (!customer) return
     if (!coords) {
       toast({ title: "Location not available", description: "Please enable location and try again.", variant: "destructive" })
       return
     }
-    const result = checkInAtLocation(customer.id, coords)
+    
+    const result = await checkInAtLocation(coords)
     if (result.success) {
       toast({ title: "Checked in!", description: result.message })
     } else {
@@ -43,48 +51,13 @@ export function CustomerDashboard() {
     }
   }
 
-  let customer = customers.find((c) => c.id === user?.id)
-
-  if (!customer && user?.email) {
-    customer = customers.find((c) => c.email === user.email)
-
-    if (!customer) {
-      customer = {
-        id: user.id,
-        name: user.name || "New Customer",
-        email: user.email,
-        points: 0,
-        tier: "bronze" as const,
-        totalSpent: 0,
-        visitCount: 1,
-        joinDate: new Date().toISOString(),
-        lastVisit: new Date().toISOString(),
-        tenantId: "default",
-        preferences: {
-          emailNotifications: true,
-          smsNotifications: false,
-          pushNotifications: true,
-        },
-        engagementScore: 50,
-      }
-    }
-  }
-
-  if (!customer) return null
-
-  const tierProgress = getTierProgress(customer.id)
-  const personalizedOffers = getPersonalizedOffers(customer.id)
-
   const handleRedeemReward = async (rewardId: string) => {
     setIsRedeeming(rewardId)
 
     try {
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000))
+      const result = await redeemReward(rewardId)
 
-      const result = redeemReward(customer.id, rewardId)
-
-      if (result?.success) {
+      if (result.success) {
         toast({
           title: "Reward Redeemed!",
           description: result.message,
@@ -92,7 +65,7 @@ export function CustomerDashboard() {
       } else {
         toast({
           title: "Redemption Failed",
-          description: result?.message || "Unable to redeem reward",
+          description: result.message,
           variant: "destructive",
         })
       }
@@ -106,6 +79,111 @@ export function CustomerDashboard() {
 
     setIsRedeeming(null)
   }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center">
+          <p className="text-destructive mb-4">Error: {error}</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!customerData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="text-center">
+          <p className="text-muted-foreground">No customer data available</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Calculate tier progress
+  const getTierProgress = () => {
+    const currentPoints = customerData.points
+    let nextTier = null
+    let pointsToNext = 0
+    let progressPercentage = 100
+
+    if (currentPoints < 500) {
+      nextTier = "silver"
+      pointsToNext = 500 - currentPoints
+      progressPercentage = (currentPoints / 500) * 100
+    } else if (currentPoints < 1000) {
+      nextTier = "gold"
+      pointsToNext = 1000 - currentPoints
+      progressPercentage = ((currentPoints - 500) / 500) * 100
+    } else if (currentPoints < 2000) {
+      nextTier = "platinum"
+      pointsToNext = 2000 - currentPoints
+      progressPercentage = ((currentPoints - 1000) / 1000) * 100
+    }
+
+    return { nextTier, pointsToNext, progressPercentage }
+  }
+
+  const tierProgress = getTierProgress()
+
+  // Generate personalized offers based on recent activity
+  const getPersonalizedOffers = () => {
+    const offers = []
+    const recentTransactions = transactions.slice(0, 5)
+    
+    if (recentTransactions.length === 0) {
+      offers.push({
+        id: "welcome",
+        title: "Welcome Bonus",
+        description: "Get 50 bonus points on your first purchase",
+        type: "bonus_points",
+        value: 50,
+        expiryDays: 30
+      })
+    }
+
+    if (customerData.points > 1000) {
+      offers.push({
+        id: "vip",
+        title: "VIP Double Points",
+        description: "Earn 2x points on all purchases this weekend",
+        type: "bonus_points",
+        value: 100,
+        expiryDays: 3
+      })
+    }
+
+    const daysSinceLastVisit = Math.floor(
+      (new Date().getTime() - new Date(customerData.lastVisit).getTime()) / (1000 * 60 * 60 * 24)
+    )
+
+    if (daysSinceLastVisit > 7) {
+      offers.push({
+        id: "comeback",
+        title: "We Miss You!",
+        description: "Get 20% off your next purchase",
+        type: "discount",
+        value: 20,
+        expiryDays: 14
+      })
+    }
+
+    return offers
+  }
+
+  const personalizedOffers = getPersonalizedOffers()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20">
@@ -146,24 +224,24 @@ export function CustomerDashboard() {
               <span className="text-foreground">Your Points Balance</span>
               <Badge
                 className={`capitalize font-medium ${
-                  customer.tier === "platinum"
+                  customerData.tier === "platinum"
                     ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white"
-                    : customer.tier === "gold"
+                    : customerData.tier === "gold"
                       ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white"
-                      : customer.tier === "silver"
+                      : customerData.tier === "silver"
                         ? "bg-gradient-to-r from-gray-400 to-gray-500 text-white"
                         : "bg-gradient-to-r from-amber-600 to-amber-700 text-white"
                 }`}
               >
-                {customer.tier} Member
+                {customerData.tier} Member
               </Badge>
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
-              {customer.points.toLocaleString()} Points
+              {customerData.points.toLocaleString()} Points
             </div>
-            {tierProgress && tierProgress.nextTier && (
+            {tierProgress.nextTier && (
               <div className="space-y-2">
                 <div className="flex justify-between text-sm text-muted-foreground">
                   <span>Progress to {tierProgress.nextTier}</span>
@@ -175,18 +253,18 @@ export function CustomerDashboard() {
 
             <div className="grid grid-cols-3 gap-4 mt-6 pt-4 border-t border-border">
               <div className="text-center">
-                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{customer.visitCount}</div>
+                <div className="text-2xl font-bold text-green-600 dark:text-green-400">{customerData.visitCount}</div>
                 <div className="text-xs text-muted-foreground">Total Visits</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                  ${customer.totalSpent.toFixed(0)}
+                  ${customerData.totalSpent.toFixed(0)}
                 </div>
                 <div className="text-xs text-muted-foreground">Total Spent</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-                  {Math.floor((new Date().getTime() - new Date(customer.joinDate).getTime()) / (1000 * 60 * 60 * 24))}
+                  {Math.floor((new Date().getTime() - new Date(customerData.joinDate).getTime()) / (1000 * 60 * 60 * 24))}
                 </div>
                 <div className="text-xs text-muted-foreground">Days Member</div>
               </div>
@@ -217,7 +295,7 @@ export function CustomerDashboard() {
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {rewards.map((reward) => {
-                const canAfford = customer.points >= reward.pointsCost
+                const canAfford = customerData.points >= reward.pointsCost
                 const isLoading = isRedeeming === reward.id
 
                 return (
@@ -242,7 +320,7 @@ export function CustomerDashboard() {
                         ? "Redeeming..."
                         : canAfford
                           ? "Redeem"
-                          : `Need ${(reward.pointsCost - customer.points).toLocaleString()} more points`}
+                          : `Need ${(reward.pointsCost - customerData.points).toLocaleString()} more points`}
                     </Button>
                   </div>
                 )
@@ -261,38 +339,27 @@ export function CustomerDashboard() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <div>
-                    <p className="font-medium text-foreground">Coffee Purchase</p>
-                    <p className="text-sm text-muted-foreground">Main Street Location</p>
+                {transactions.slice(0, 5).map((transaction) => (
+                  <div key={transaction.id} className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
+                    <div>
+                      <p className="font-medium text-foreground">
+                        {transaction.pointsEarned > 0 ? "Purchase" : "Reward Redemption"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{transaction.location}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-medium ${transaction.pointsEarned > 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
+                        {transaction.pointsEarned > 0 ? `+${transaction.pointsEarned} pts` : `-${transaction.pointsRedeemed} pts`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(transaction.timestamp).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium text-green-600 dark:text-green-400">+25 pts</p>
-                    <p className="text-xs text-muted-foreground">2 hours ago</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <div>
-                    <p className="font-medium text-foreground">Redeemed Free Pastry</p>
-                    <p className="text-sm text-muted-foreground">Downtown Location</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-red-600 dark:text-red-400">-300 pts</p>
-                    <p className="text-xs text-muted-foreground">Yesterday</p>
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/30">
-                  <div>
-                    <p className="font-medium text-foreground">Lunch Purchase</p>
-                    <p className="text-sm text-muted-foreground">Airport Location</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium text-green-600 dark:text-green-400">+45 pts</p>
-                    <p className="text-xs text-muted-foreground">3 days ago</p>
-                  </div>
-                </div>
+                ))}
+                {transactions.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No recent activity</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -326,6 +393,9 @@ export function CustomerDashboard() {
                     </div>
                   </div>
                 ))}
+                {personalizedOffers.length === 0 && (
+                  <p className="text-center text-muted-foreground py-4">No personalized offers available</p>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -333,20 +403,7 @@ export function CustomerDashboard() {
 
         {/* Purchase Section */}
         <div className="mt-8">
-          <Card className="bg-card border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center text-foreground">
-                <Gift className="h-5 w-5 mr-2 text-green-600" />
-                Make a Purchase
-              </CardTitle>
-              <CardDescription>
-                Buy coffee and earn loyalty points automatically
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <PurchaseForm />
-            </CardContent>
-          </Card>
+          <PurchaseForm />
         </div>
       </main>
     </div>

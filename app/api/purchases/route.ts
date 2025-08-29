@@ -1,77 +1,123 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
-import { getAuthFromRequest } from "@/lib/auth"
+import { verifyAuthToken } from "@/lib/auth"
 import { z } from "zod"
 
-const purchaseSchema = z.object({
-  itemName: z.string().min(1),
+const createPurchaseSchema = z.object({
+  tenantId: z.string(),
+  location: z.string(),
   amount: z.number().positive(),
-  location: z.string().min(1),
-  paymentMethod: z.string().min(1),
+  items: z.array(z.object({
+    name: z.string(),
+    category: z.string(),
+    price: z.number().positive(),
+    quantity: z.number().positive()
+  }))
 })
 
 export async function POST(request: Request) {
   try {
-    const auth = getAuthFromRequest(request)
-    if (!auth) {
+    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    if (!token) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
     }
 
+    const payload = verifyAuthToken(token)
+    if (!payload) {
+      return NextResponse.json({ ok: false, error: "Invalid token" }, { status: 401 })
+    }
+
     const body = await request.json()
-    const parsed = purchaseSchema.safeParse(body)
+    const parsed = createPurchaseSchema.safeParse(body)
     if (!parsed.success) {
       return NextResponse.json({ ok: false, error: "Invalid input" }, { status: 400 })
     }
 
-    const { itemName, amount, location, paymentMethod } = parsed.data
+    const { tenantId, location, amount, items } = parsed.data
 
-    // Get user and tenant info
+    // Verify user belongs to the tenant
     const user = await prisma.user.findUnique({
-      where: { id: auth.userId },
-      include: { tenant: true },
+      where: { id: payload.userId }
     })
 
-    if (!user) {
-      return NextResponse.json({ ok: false, error: "User not found" }, { status: 404 })
+    if (!user || user.tenantId !== tenantId) {
+      return NextResponse.json({ ok: false, error: "Unauthorized for this tenant" }, { status: 403 })
     }
 
-    // Get the loyalty program to calculate points
-    const program = await prisma.program.findFirst({
-      where: { tenantId: user.tenantId },
-    })
-
-    if (!program) {
-      return NextResponse.json({ ok: false, error: "Loyalty program not found" }, { status: 404 })
-    }
-
-    // Calculate points earned (2 points per dollar by default)
-    const pointsEarned = Math.round(amount * program.pointsPerDollar)
-
-    // Create the transaction
-    const transaction = await prisma.transaction.create({
+    const purchase = await prisma.purchase.create({
       data: {
-        userId: user.id,
-        tenantId: user.tenantId,
-        amount,
-        pointsEarned,
+        userId: payload.userId,
+        tenantId,
         location,
-        paymentMethod,
-      },
+        amount,
+        items: JSON.stringify(items),
+        status: "pending"
+      }
     })
 
-    return NextResponse.json({
-      ok: true,
-      transaction: {
-        id: transaction.id,
-        amount: transaction.amount,
-        pointsEarned: transaction.pointsEarned,
-        location: transaction.location,
-        timestamp: transaction.timestamp,
-      },
-      message: `Purchase successful! You earned ${pointsEarned} points.`,
-    })
+    return NextResponse.json({ ok: true, purchase })
   } catch (e) {
-    console.error("Purchase error:", e)
+    console.error("Purchase creation error:", e)
+    return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 })
+  }
+}
+
+export async function GET(request: Request) {
+  try {
+    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    if (!token) {
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
+    }
+
+    const payload = verifyAuthToken(token)
+    if (!payload) {
+      return NextResponse.json({ ok: false, error: "Invalid token" }, { status: 401 })
+    }
+
+    const { searchParams } = new URL(request.url)
+    const tenantId = searchParams.get("tenantId")
+    const status = searchParams.get("status")
+
+    if (!tenantId) {
+      return NextResponse.json({ ok: false, error: "Tenant ID required" }, { status: 400 })
+    }
+
+    // Verify user belongs to the tenant
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId }
+    })
+
+    if (!user || user.tenantId !== tenantId) {
+      return NextResponse.json({ ok: false, error: "Unauthorized for this tenant" }, { status: 403 })
+    }
+
+    const where: any = { tenantId }
+    if (status) {
+      where.status = status
+    }
+
+    // If user is customer, only show their purchases
+    if (payload.role === "customer") {
+      where.userId = payload.userId
+    }
+
+    const purchases = await prisma.purchase.findMany({
+      where,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { timestamp: "desc" }
+    })
+
+    return NextResponse.json({ ok: true, purchases })
+  } catch (e) {
+    console.error("Purchase retrieval error:", e)
     return NextResponse.json({ ok: false, error: "Server error" }, { status: 500 })
   }
 }

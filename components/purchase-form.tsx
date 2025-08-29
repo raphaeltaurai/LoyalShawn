@@ -1,177 +1,262 @@
 "use client"
 
 import { useState } from "react"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useAuth } from "./auth-provider"
+import { useDatabase } from "@/hooks/use-database"
+import { Button } from "./ui/button"
+import { Input } from "./ui/input"
+import { Label } from "./ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { Badge } from "./ui/badge"
+import { Plus, Trash2, ShoppingCart } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-const coffeeItems = [
-  { name: "Espresso", price: 3.50 },
-  { name: "Cappuccino", price: 4.50 },
-  { name: "Latte", price: 4.75 },
-  { name: "Americano", price: 3.75 },
-  { name: "Mocha", price: 5.00 },
-  { name: "Flat White", price: 4.25 },
-]
-
-const locations = [
-  "Harare CBD",
-  "Bulawayo Center", 
-  "Victoria Falls Town",
-  "Mutare Central",
-  "Online Order",
-]
-
-const paymentMethods = [
-  "Credit Card",
-  "Cash",
-  "Mobile Money",
-  "Bank Transfer",
-]
+interface PurchaseItem {
+  name: string
+  category: string
+  price: number
+  quantity: number
+}
 
 export function PurchaseForm() {
-  const [selectedItem, setSelectedItem] = useState("")
-  const [location, setLocation] = useState("")
-  const [paymentMethod, setPaymentMethod] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+  const { user } = useAuth()
+  const { createPurchase, geofences } = useDatabase()
   const { toast } = useToast()
+  const [selectedTenant, setSelectedTenant] = useState("")
+  const [location, setLocation] = useState("")
+  const [items, setItems] = useState<PurchaseItem[]>([
+    { name: "", category: "", price: 0, quantity: 1 }
+  ])
+  const [submitting, setSubmitting] = useState(false)
 
-  const selectedItemData = coffeeItems.find(item => item.name === selectedItem)
+  const addItem = () => {
+    setItems([...items, { name: "", category: "", price: 0, quantity: 1 }])
+  }
 
-  const handlePurchase = async () => {
-    if (!selectedItem || !location || !paymentMethod) {
-      setError("Please fill in all fields")
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index))
+    }
+  }
+
+  const updateItem = (index: number, field: keyof PurchaseItem, value: string | number) => {
+    const newItems = [...items]
+    newItems[index] = { ...newItems[index], [field]: value }
+    setItems(newItems)
+  }
+
+  const calculateTotal = () => {
+    return items.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!user) {
+      toast({ title: "Error", description: "You must be logged in to record a purchase", variant: "destructive" })
       return
     }
 
-    setLoading(true)
-    setError("")
+    if (!selectedTenant) {
+      toast({ title: "Error", description: "Please select an organization", variant: "destructive" })
+      return
+    }
+
+    if (!location) {
+      toast({ title: "Error", description: "Please enter a location", variant: "destructive" })
+      return
+    }
+
+    if (items.some(item => !item.name || item.price <= 0)) {
+      toast({ title: "Error", description: "Please fill in all item details correctly", variant: "destructive" })
+      return
+    }
+
+    setSubmitting(true)
 
     try {
-      const token = localStorage.getItem("loyalty-token")
-      const res = await fetch("/api/purchases", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          itemName: selectedItem,
-          amount: selectedItemData!.price,
-          location,
-          paymentMethod,
-        }),
+      const result = await createPurchase({
+        tenantId: selectedTenant,
+        location,
+        amount: calculateTotal(),
+        items
       })
 
-      const data = await res.json()
-      if (!data.ok) {
-        setError(data.error || "Purchase failed")
-      } else {
-        toast({
-          title: "Purchase Successful!",
-          description: data.message,
-        })
+      if (result.success) {
+        toast({ title: "Success", description: result.message })
         // Reset form
-        setSelectedItem("")
+        setSelectedTenant("")
         setLocation("")
-        setPaymentMethod("")
+        setItems([{ name: "", category: "", price: 0, quantity: 1 }])
+      } else {
+        toast({ title: "Error", description: result.message, variant: "destructive" })
       }
-    } catch {
-      setError("Server error")
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to record purchase", variant: "destructive" })
     } finally {
-      setLoading(false)
+      setSubmitting(false)
     }
   }
 
   return (
-    <Card className="w-full max-w-md">
+    <Card className="bg-card border-border/50 shadow-lg">
       <CardHeader>
-        <CardTitle>Make a Purchase</CardTitle>
-        <CardDescription>Buy coffee and earn loyalty points automatically</CardDescription>
+        <CardTitle className="flex items-center text-foreground">
+          <ShoppingCart className="h-5 w-5 mr-2 text-green-600" />
+          Record a Purchase
+        </CardTitle>
+        <CardDescription>
+          Record your purchase for points approval by the organization
+        </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="item">Select Item</Label>
-          <Select value={selectedItem} onValueChange={setSelectedItem}>
-            <SelectTrigger>
-              <SelectValue placeholder="Choose your coffee" />
-            </SelectTrigger>
-            <SelectContent>
-              {coffeeItems.map((item) => (
-                <SelectItem key={item.name} value={item.name}>
-                  {item.name} - ${item.price}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="location">Location</Label>
-          <Select value={location} onValueChange={setLocation}>
-            <SelectTrigger>
-              <SelectValue placeholder="Where did you purchase?" />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((loc) => (
-                <SelectItem key={loc} value={loc}>
-                  {loc}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="payment">Payment Method</Label>
-          <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-            <SelectTrigger>
-              <SelectValue placeholder="How did you pay?" />
-            </SelectTrigger>
-            <SelectContent>
-              {paymentMethods.map((method) => (
-                <SelectItem key={method} value={method}>
-                  {method}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        {selectedItemData && (
-          <div className="p-3 bg-muted rounded-lg">
-            <div className="flex justify-between">
-              <span>Item:</span>
-              <span className="font-medium">{selectedItemData.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Price:</span>
-              <span className="font-medium">${selectedItemData.price}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Points Earned:</span>
-              <span className="font-medium text-green-600">
-                {Math.round(selectedItemData.price * 2)} points
-              </span>
-            </div>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Organization Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="tenant">Select Organization/Shop</Label>
+            <select
+              id="tenant"
+              name="tenant"
+              aria-label="Select organization"
+              value={selectedTenant}
+              onChange={(e) => setSelectedTenant(e.target.value)}
+              className="w-full p-2 border border-border rounded-md bg-background text-foreground"
+              required
+            >
+              <option value="">Choose an organization...</option>
+              <option value={user?.tenantId || ""}>
+                {user?.tenantId === "coffee-shop-1" ? "Coffee Shop" : user?.tenantId}
+              </option>
+            </select>
           </div>
-        )}
 
-        {error && (
-          <Alert variant="destructive">
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
+          {/* Location */}
+          <div className="space-y-2">
+            <Label htmlFor="location">Location</Label>
+            <select
+              id="location"
+              name="location"
+              aria-label="Select location"
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full p-2 border border-border rounded-md bg-background text-foreground"
+              required
+            >
+              <option value="">Select a location...</option>
+              {geofences.map((fence) => (
+                <option key={fence.id} value={fence.name}>
+                  {fence.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <Button 
-          onClick={handlePurchase} 
-          disabled={loading || !selectedItem || !location || !paymentMethod}
-          className="w-full"
-        >
-          {loading ? "Processing..." : "Complete Purchase"}
-        </Button>
+          {/* Items */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <Label>Purchase Items</Label>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={addItem}
+                className="flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-1" />
+                Add Item
+              </Button>
+            </div>
+
+            {items.map((item, index) => (
+              <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border border-border rounded-lg">
+                <div>
+                  <Label htmlFor={`item-${index}-name`}>Item Name</Label>
+                  <Input
+                    id={`item-${index}-name`}
+                    value={item.name}
+                    onChange={(e) => updateItem(index, "name", e.target.value)}
+                    placeholder="e.g., Large Latte"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`item-${index}-category`}>Category</Label>
+                  <Input
+                    id={`item-${index}-category`}
+                    value={item.category}
+                    onChange={(e) => updateItem(index, "category", e.target.value)}
+                    placeholder="e.g., Beverages"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor={`item-${index}-price`}>Price ($)</Label>
+                  <Input
+                    id={`item-${index}-price`}
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={item.price}
+                    onChange={(e) => updateItem(index, "price", parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                    required
+                  />
+                </div>
+                <div className="flex items-end space-x-2">
+                  <div className="flex-1">
+                    <Label htmlFor={`item-${index}-quantity`}>Qty</Label>
+                    <Input
+                      id={`item-${index}-quantity`}
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 1)}
+                      required
+                    />
+                  </div>
+                  {items.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeItem(index)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Total */}
+          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+            <span className="font-medium">Total Amount:</span>
+            <Badge variant="secondary" className="text-lg">
+              ${calculateTotal().toFixed(2)}
+            </Badge>
+          </div>
+
+          {/* Timestamp */}
+          <div className="space-y-2">
+            <Label>Timestamp</Label>
+            <Input
+              value={new Date().toLocaleString()}
+              disabled
+              className="bg-muted"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={submitting}
+          >
+            {submitting ? "Recording Purchase..." : "Submit Record"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   )
