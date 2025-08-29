@@ -11,7 +11,7 @@ interface User {
   id: string
   email: string
   name: string
-  role: "admin" | "customer"
+  role: "admin" | "customer" | "management"
   tenantId: string
   picture?: string
   authProvider?: "email" | "google"

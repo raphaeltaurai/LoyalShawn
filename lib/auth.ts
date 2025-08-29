@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken"
 export interface AuthTokenPayload {
   userId: string
   email: string
-  role: "admin" | "customer"
+  role: "admin" | "customer" | "management"
   tenantId: string
 }
 
