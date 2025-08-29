@@ -16,6 +16,7 @@ export default function AdminCustomersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [txnFor, setTxnFor] = useState<{ userId: string; amount: string; location: string; method: string } | null>(null)
+  const [promoting, setPromoting] = useState<string | null>(null)
 
   useEffect(() => {
     const load = async () => {
@@ -57,6 +58,33 @@ export default function AdminCustomersPage() {
     }
   }
 
+  const promoteUser = async (userId: string, newRole: "admin" | "customer") => {
+    setPromoting(userId)
+    try {
+      const token = localStorage.getItem("loyalty-token")
+      const res = await fetch("/api/users/promote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId, role: newRole }),
+      })
+      const data = await res.json()
+      if (!data.ok) {
+        setError(data.error || "Failed to promote user")
+      } else {
+        // Refresh the customers list
+        const refreshRes = await fetch(`/api/users?tenantId=${user?.tenantId || ""}`, { 
+          headers: { Authorization: `Bearer ${token}` } 
+        })
+        const refreshData = await refreshRes.json()
+        if (refreshData.ok) setCustomers(refreshData.users)
+      }
+    } catch {
+      setError("Server error")
+    } finally {
+      setPromoting(null)
+    }
+  }
+
   if (loading) return <div className="p-6">Loading...</div>
   if (error) return (
     <div className="p-6">
@@ -80,6 +108,14 @@ export default function AdminCustomersPage() {
               </div>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setTxnFor({ userId: c.id, amount: "", location: "", method: "" })}>Add Transaction</Button>
+                <Button 
+                  variant={c.role === "admin" ? "destructive" : "default"} 
+                  size="sm"
+                  onClick={() => promoteUser(c.id, c.role === "admin" ? "customer" : "admin")}
+                  disabled={promoting === c.id}
+                >
+                  {promoting === c.id ? "..." : (c.role === "admin" ? "Demote" : "Promote to Admin")}
+                </Button>
               </div>
             </div>
           ))}

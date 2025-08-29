@@ -13,6 +13,7 @@ import { useState } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { SecurityBanner } from "./security-banner"
 import { useLocation } from "@/hooks/use-location"
+import { PurchaseForm } from "./purchase-form"
 
 export function CustomerDashboard() {
   const { user, logout } = useAuth()
@@ -326,6 +327,24 @@ export function CustomerDashboard() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Purchase Section */}
+        <div className="mt-8">
+          <Card className="bg-card border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center text-foreground">
+                <Gift className="h-5 w-5 mr-2 text-green-600" />
+                Make a Purchase
+              </CardTitle>
+              <CardDescription>
+                Buy coffee and earn loyalty points automatically
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <PurchaseForm />
             </CardContent>
           </Card>
         </div>

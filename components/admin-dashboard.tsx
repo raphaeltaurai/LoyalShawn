@@ -143,19 +143,26 @@ export function AdminDashboard() {
               <CardDescription className="text-muted-foreground">Manage your loyalty program</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <Button className="w-full justify-start bg-primary hover:bg-primary/90">
+              <Button 
+                className="w-full justify-start bg-primary hover:bg-primary/90"
+                onClick={() => window.location.href = "/admin/rewards"}
+              >
                 <Settings className="h-4 w-4 mr-2" />
                 Configure Rewards
               </Button>
               <Button
                 variant="outline"
                 className="w-full justify-start border-border hover:bg-accent bg-transparent"
-                onClick={() => (window.location.href = "/admin/customers")}
+                onClick={() => window.location.href = "/admin/customers"}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Manage Customers
               </Button>
-              <Button variant="outline" className="w-full justify-start border-border hover:bg-accent bg-transparent">
+              <Button 
+                variant="outline" 
+                className="w-full justify-start border-border hover:bg-accent bg-transparent"
+                onClick={() => window.location.href = "/admin/analytics"}
+              >
                 <TrendingUp className="h-4 w-4 mr-2" />
                 View Analytics
               </Button>
@@ -197,6 +204,32 @@ export function AdminDashboard() {
 
         <div className="mt-6">
           <AdminRulesConfig />
+        </div>
+
+        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="bg-card border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-foreground">Manage Customers</CardTitle>
+              <CardDescription className="text-muted-foreground">View and manage customer accounts</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = "/admin/customers"}>
+                View Customers
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-card border-border/50 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-foreground">Analytics Dashboard</CardTitle>
+              <CardDescription className="text-muted-foreground">View loyalty program insights and metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => window.location.href = "/admin/analytics"}>
+                View Analytics
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="mt-6 bg-card border-border/50 shadow-lg">
