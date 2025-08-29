@@ -53,8 +53,7 @@
     "input-otp": "1.4.1",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.454.0",
-    "ml-kmeans": "^6.0.0",
-    "ml-logistic-regression": "^2.0.0",
+
     "next": "15.2.4",
     "next-themes": "latest",
     "pg": "^8.16.3",
@@ -64,7 +63,7 @@
     "react-hook-form": "^7.60.0",
     "react-resizable-panels": "^2.1.7",
     "recharts": "2.15.4",
-    "simple-statistics": "^7.8.8",
+
     "sonner": "^1.7.4",
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
