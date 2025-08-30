@@ -2,8 +2,7 @@
 
 This document provides instructions for setting up the LoyaltyAI database with any PostgreSQL service provider.
 
-## SQL Files
-
+## SQL Files()
 Two SQL files are provided:
 
 1. **`database_schema.sql`** - Complete schema with UUID extension (for providers that support it)
