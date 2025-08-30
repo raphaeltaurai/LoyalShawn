@@ -77,7 +77,7 @@ export function PurchaseForm() {
     try {
       const result = await createPurchase({
         tenantId: selectedTenant,
-        location,
+          location,
         amount: calculateTotal(),
         items
       })
@@ -112,7 +112,7 @@ export function PurchaseForm() {
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Organization Selection */}
-          <div className="space-y-2">
+        <div className="space-y-2">
             <Label htmlFor="tenant">Select Organization/Shop</Label>
             <select
               id="tenant"
@@ -128,11 +128,11 @@ export function PurchaseForm() {
                 {user?.tenantId === "coffee-shop-1" ? "Coffee Shop" : user?.tenantId}
               </option>
             </select>
-          </div>
+        </div>
 
           {/* Location */}
-          <div className="space-y-2">
-            <Label htmlFor="location">Location</Label>
+        <div className="space-y-2">
+          <Label htmlFor="location">Location</Label>
             <select
               id="location"
               name="location"
@@ -149,7 +149,7 @@ export function PurchaseForm() {
                 </option>
               ))}
             </select>
-          </div>
+        </div>
 
           {/* Items */}
           <div className="space-y-4">
@@ -165,7 +165,7 @@ export function PurchaseForm() {
                 <Plus className="h-4 w-4 mr-1" />
                 Add Item
               </Button>
-            </div>
+        </div>
 
             {items.map((item, index) => (
               <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-2 p-3 border border-border rounded-lg">
@@ -201,7 +201,7 @@ export function PurchaseForm() {
                     placeholder="0.00"
                     required
                   />
-                </div>
+            </div>
                 <div className="flex items-end space-x-2">
                   <div className="flex-1">
                     <Label htmlFor={`item-${index}-quantity`}>Qty</Label>
@@ -213,7 +213,7 @@ export function PurchaseForm() {
                       onChange={(e) => updateItem(index, "quantity", parseInt(e.target.value) || 1)}
                       required
                     />
-                  </div>
+            </div>
                   {items.length > 1 && (
                     <Button
                       type="button"
@@ -225,8 +225,8 @@ export function PurchaseForm() {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
-                </div>
-              </div>
+            </div>
+          </div>
             ))}
           </div>
 
@@ -249,13 +249,13 @@ export function PurchaseForm() {
           </div>
 
           {/* Submit Button */}
-          <Button
+        <Button 
             type="submit"
-            className="w-full"
+          className="w-full"
             disabled={submitting}
-          >
+        >
             {submitting ? "Recording Purchase..." : "Submit Record"}
-          </Button>
+        </Button>
         </form>
       </CardContent>
     </Card>

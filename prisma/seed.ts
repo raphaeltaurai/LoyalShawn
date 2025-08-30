@@ -4,7 +4,7 @@ const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding database...')
-
+  
   // Create sample tenant
   const tenant = await prisma.tenant.upsert({
     where: { slug: 'coffee-shop-1' },
@@ -31,15 +31,15 @@ async function main() {
   // Create sample customer user
   const customerUser = await prisma.user.upsert({
     where: { email: 'customer@example.com' },
-    update: {},
-    create: {
+      update: {},
+      create: { 
       email: 'customer@example.com',
       name: 'John Customer',
       role: 'customer',
       passwordHash: '$2a$10$K7L1OJ45/4Y2nIvhRVpCe.FSmhDdWoXehVzJptJ/op0lSsvqNu/1m', // demo123
-      tenantId: tenant.id
+        tenantId: tenant.id 
     }
-  })
+    })
 
   // Create loyalty program
   const program = await prisma.program.upsert({
@@ -133,11 +133,11 @@ async function main() {
   // Create sample transactions
   const transactions = await Promise.all([
     prisma.transaction.create({
-      data: {
+    data: {
         userId: customerUser.id,
-        tenantId: tenant.id,
+      tenantId: tenant.id,
         amount: 12.50,
-        pointsEarned: 25,
+      pointsEarned: 25,
         pointsRedeemed: 0,
         location: 'Main Street Location',
         paymentMethod: 'Credit Card'
