@@ -13,6 +13,9 @@ export const metadata = {
   generator: "LoyaltyAI",
   keywords: ["loyalty program", "customer engagement", "AI analytics", "rewards platform"],
   authors: [{ name: "LoyaltyAI Team" }],
+  icons: {
+    icon: '/favicon.ico',
+  },
   openGraph: {
     title: "LoyaltyAI - AI-Powered Customer Loyalty Platform",
     description: "Transform customer engagement with AI-driven loyalty programs",
