@@ -31,6 +31,7 @@ html {
   --font-mono: ${GeistMono.variable};
 }
         `}</style>
+        <script src='https://cdn.jotfor.ms/agent/embedjs/0198f7bfc2da79ba9ef2aabf3d8c620fdc0d/embed.js'></script>
       </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
