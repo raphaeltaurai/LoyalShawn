@@ -10,7 +10,8 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts"
-  },
+    },
+    "postinstall": "prisma generate",
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
     "@prisma/client": "^6.14.0",
