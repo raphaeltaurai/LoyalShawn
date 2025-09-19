@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/components/auth-provider"
 import { Header } from "@/components/header"
+import { Chatbot } from "@/components/chatbot"
 import "./globals.css"
 
 export const metadata = {
@@ -41,6 +42,7 @@ html {
           <AuthProvider>
             <Header />
             <ErrorBoundary>{children}</ErrorBoundary>
+            <Chatbot />
             <Toaster />
           </AuthProvider>
         </ThemeProvider>
